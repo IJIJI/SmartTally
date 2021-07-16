@@ -21,24 +21,34 @@ ATEMstd AtemSwitcher;
 
 
 
+#define camNum 8
 
-#define camera 5
+struct camData {
+  bool program = false;
+  bool preview = false;
+  bool alert = false;
+};
 
+// struct camData cameras[camNum];
 
-#define redLedPin 3
-#define greenLedPin 5
+struct dataPackage {
+  struct camData cam1;
+  struct camData cam2;
+  struct camData cam3;
+  struct camData cam4;
+  struct camData cam5;
+  struct camData cam6;
+  struct camData cam7;
+  struct camData cam8;
+};
 
-long long lastScan;
+struct dataPackage cameras;
+
+long long lastSend;
 
 void setup(){
   Serial.begin(115200);
   Serial.println("Starting...");
-
-  pinMode(redLedPin, OUTPUT);
-  pinMode(greenLedPin, OUTPUT);
-
-  digitalWrite(redLedPin, HIGH);
-  digitalWrite(greenLedPin, HIGH);
 
   
 
@@ -46,17 +56,15 @@ void setup(){
 
   // Initialize a connection to the switcher:
   AtemSwitcher.begin(switcherIp);
-  AtemSwitcher.serialOutput(0x80);
+  // AtemSwitcher.serialOutput(0x80);
   AtemSwitcher.connect();
 
 
 
-  lastScan = millis();
+  lastSend = millis();
 
   delay(500);
 
-  digitalWrite(redLedPin, LOW);
-  digitalWrite(greenLedPin, LOW);
 
   Serial.println("Done.");
   Serial.print("\n\n");
@@ -72,30 +80,57 @@ void loop(){
   // Check for packets, respond to them etc. Keeping the connection alive!
   AtemSwitcher.runLoop();
 
-
-  if(AtemSwitcher.getProgramTally(camera)){
-    digitalWrite(redLedPin, HIGH);
-  }
-  else{
-    digitalWrite(redLedPin, LOW);
-  }
-
-  if(AtemSwitcher.getPreviewTally(camera)){
-    digitalWrite(greenLedPin, HIGH);
-  }
-  else{
-    digitalWrite(greenLedPin, LOW);
+  if(dataCollect() || millis() - lastSend > 1000){
+    applyData();
   }
 
 
-  if(millis() - lastScan > 500){
-    lastScan = millis();
-
-    Serial.print("Preview: ");
-    Serial.print(AtemSwitcher.getPreviewInput(camera));
-    Serial.print(" Program: ");
-    Serial.println(AtemSwitcher.getProgramInput(camera));
-  }
   
 }
 
+bool dataCollect(){
+  for (int x = 0; x < camNum; x++){
+    cameras[x].program = AtemSwitcher.getProgramTally(x+1);
+    cameras[x].preview = AtemSwitcher.getPreviewTally(x+1);
+  }
+
+  return true;
+}
+
+void applyData(){
+
+}
+
+
+
+
+// if(AtemSwitcher.getProgramTally(camera)){
+//   digitalWrite(redLedPin1, HIGH);
+//   digitalWrite(greenLedPin1, LOW);
+
+// }
+// else if(AtemSwitcher.getPreviewTally(camera)){
+//   digitalWrite(greenLedPin1, HIGH);
+//   digitalWrite(redLedPin1, LOW);
+
+// }
+// else{
+//   digitalWrite(greenLedPin1, LOW);
+//   digitalWrite(redLedPin1, LOW);
+
+// }
+
+
+
+// if(millis() - lastScan > 500){
+//   lastScan = millis();
+
+//   Serial.print("Program: ");
+//   Serial.print(AtemSwitcher.getProgramInput());
+//   Serial.print(" Preview: ");
+//   Serial.print(AtemSwitcher.getPreviewInput());
+//   Serial.print(" FTB: ");
+//   Serial.println(AtemSwitcher.getFadeToBlackFrameCount());
+
+  
+// }
